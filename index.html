@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero Messenger</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Auth Screens -->
+    <div id="authContainer" class="auth-container">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="auth-screen active">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="logo">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="28" y="4" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="4" y="28" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="28" y="28" width="16" height="16" rx="2" fill="#00D9FF" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    <h1>Zero Messenger</h1>
+                    <p>Свяжитесь с миром</p>
+                </div>
+
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                        <span class="form-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="loginPassword" placeholder="Пароль" required>
+                        <span class="form-error"></span>
+                    </div>
+                    <button type="submit" class="btn-primary">Вход</button>
+                </form>
+
+                <div class="auth-toggle">
+                    <span>Нет аккаунта?</span>
+                    <button type="button" class="btn-text" onclick="switchToRegister()">Создать</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Screen -->
+        <div id="registerScreen" class="auth-screen">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="logo">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="28" y="4" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="4" y="28" width="16" height="16" rx="2" fill="#00D9FF"/>
+                            <rect x="28" y="28" width="16" height="16" rx="2" fill="#00D9FF" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    <h1>Присоединиться</h1>
+                    <p>Начните общение</p>
+                </div>
+
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <input type="text" id="registerName" placeholder="Имя" required>
+                        <span class="form-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="registerEmail" placeholder="Email" required>
+                        <span class="form-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="registerPassword" placeholder="Пароль (мин. 6 символов)" required>
+                        <span class="form-error"></span>
+                    </div>
+                    <button type="submit" class="btn-primary">Создать аккаунт</button>
+                </form>
+
+                <div class="auth-toggle">
+                    <span>Уже есть аккаунт?</span>
+                    <button type="button" class="btn-text" onclick="switchToLogin()">Войти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar" id="sidebarAvatar"></div>
+                <div class="sidebar-title">
+                    <h2 id="appUserName">Zero</h2>
+                    <span class="user-id" id="displayUserId">#0000</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-btn active" data-view="chats" onclick="switchView('chats')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Чаты</span>
+                </button>
+                <button class="nav-btn" data-view="profile" onclick="switchView('profile')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+                    </svg>
+                    <span>Профиль</span>
+                </button>
+                <button class="nav-btn" data-view="settings" onclick="switchView('settings')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="1"/>
+                        <path d="M12 1v6m6.16-1.86l-4.23 4.23m6.58 1.63h-6m1.86 6.16l-4.23-4.23m-1.63 6.58v-6M5.64 19.36l4.23-4.23M1 12h6M7.86 5.84l4.23 4.23"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>Настройки</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Chats View -->
+            <div id="chatsView" class="view active">
+                <div class="view-header">
+                    <h1>Чаты</h1>
+                    <button class="btn-icon" onclick="openFindUserDialog()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="chatsList" class="chats-list">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" opacity="0.3">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <p>Нет чатов</p>
+                        <small>Найдите пользователя по ID чтобы начать общение</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat View -->
+            <div id="chatDetailView" class="view">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="backToChats()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="chat-info">
+                        <h2 id="chatName">Chat</h2>
+                        <small id="chatUserId">#0000</small>
+                    </div>
+                    <div class="chat-avatar" id="chatAvatarHeader"></div>
+                </div>
+
+                <div id="messagesContainer" class="messages-container"></div>
+
+                <div class="message-input-area">
+                    <input type="text" id="messageInput" placeholder="Сообщение..." />
+                    <button class="btn-send" onclick="sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16157841 C3.34915502,0.9 2.40734225,0.9 1.77946707,1.4429026 C0.994623095,2.0772576 0.837654326,3.16651766 1.15159189,3.95267906 L3.03521743,10.3936721 C3.03521743,10.5507694 3.34915502,10.7078668 3.50612381,10.7078668 L16.6915026,11.4933537 C16.6915026,11.4933537 17.1624089,11.4933537 17.1624089,12.0366572 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Delete Actions Panel -->
+                <div id="deleteActionsPanel" class="delete-actions-panel">
+                    <span id="deleteCountLabel">1 сообщение</span>
+                    <div class="delete-buttons">
+                        <button class="btn-secondary" onclick="cancelDelete()">Отмена</button>
+                        <button class="btn-danger" onclick="openDeleteDialog()">Удалить</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile View -->
+            <div id="profileView" class="view">
+                <div class="view-header">
+                    <h1>Мой Профиль</h1>
+                </div>
+
+                <div class="profile-content">
+                    <div class="profile-avatar-section">
+                        <div class="profile-avatar" id="profileAvatar"></div>
+                        <button class="btn-icon-upload" onclick="triggerAvatarUpload()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0-2C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z" opacity="0"/>
+                                <path d="M12 7c.552 0 1 .448 1 1v3h3c.552 0 1 .448 1 1s-.448 1-1 1h-3v3c0 .552-.448 1-1 1s-1-.448-1-1v-3H8c-.552 0-1-.448-1-1s.448-1 1-1h3v-3c0-.552.448-1 1-1z"/>
+                            </svg>
+                        </button>
+                        <input type="file" id="avatarInput" style="display:none" accept="image/*" onchange="handleAvatarUpload(event)">
+                    </div>
+
+                    <div class="profile-form">
+                        <div class="form-group">
+                            <label>ID профиля</label>
+                            <input type="text" id="profileId" readonly class="input-readonly">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Имя</label>
+                            <input type="text" id="profileName" placeholder="Ваше имя">
+                        </div>
+
+                        <div class="form-group">
+                            <label>О себе</label>
+                            <textarea id="profileAbout" placeholder="Расскажите о себе..." maxlength="500"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Дата рождения</label>
+                            <input type="date" id="profileBirthday">
+                        </div>
+
+                        <button class="btn-primary" onclick="saveProfile()">Сохранить изменения</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="view">
+                <div class="view-header">
+                    <h1>Настройки</h1>
+                </div>
+
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3>Конфиденциальность</h3>
+                        <div class="settings-item">
+                            <div class="settings-text">
+                                <span>Скрыть "О себе"</span>
+                                <small>Другие пользователи не смогут видеть информацию</small>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="hideAbout">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-item">
+                            <div class="settings-text">
+                                <span>Скрыть дату рождения</span>
+                                <small>Другие пользователи не смогут видеть дату</small>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="hideBirthday">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Внешний вид</h3>
+                        <div class="settings-item">
+                            <div class="settings-text">
+                                <span>Размер шрифта</span>
+                                <small>Выберите удобный размер</small>
+                            </div>
+                            <select id="fontSizeSelect" onchange="changeFontSize()">
+                                <option value="small">Маленький</option>
+                                <option value="medium" selected>Средний</option>
+                                <option value="large">Большой</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-item">
+                            <div class="settings-text">
+                                <span>Тёмная тема</span>
+                                <small>Экономит батарею</small>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="darkTheme">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Аккаунт</h3>
+                        <button class="btn-danger-outline" onclick="logout()">Выход</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <!-- Find User Dialog -->
+    <div id="findUserDialog" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Найти пользователя</h2>
+                <button class="btn-close" onclick="closeFindUserDialog()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="searchUserId" placeholder="Введите 4-значный ID (#0000)" maxlength="4">
+                <small>Например: 1234</small>
+                <button class="btn-primary" style="margin-top: 12px;" onclick="findUserById()">Найти</button>
+                <div id="searchResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Dialog -->
+    <div id="deleteDialog" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Удалить сообщение</h2>
+                <button class="btn-close" onclick="closeDeleteDialog()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Выберите как удалить сообщение:</p>
+                <div class="delete-options">
+                    <button class="btn-secondary" onclick="deleteMessageForMe()">Удалить у себя</button>
+                    <button class="btn-danger" onclick="deleteMessageForAll()">Удалить у всех</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <script src="config.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="firestore.js"></script>
+    <script src="chat.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

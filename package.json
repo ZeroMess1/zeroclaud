@@ -1,0 +1,47 @@
+{
+  "name": "zero-messenger",
+  "version": "1.0.0",
+  "description": "Modern messenger app built with Firebase and Firestore",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8080 -c-1",
+    "serve": "npx http-server",
+    "build": "echo 'Build process not needed for web version'",
+    "build:android": "cordova build android --release",
+    "build:ios": "cordova build ios --release",
+    "test": "echo 'No tests configured yet'",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "keywords": [
+    "messenger",
+    "firebase",
+    "firestore",
+    "chat",
+    "real-time",
+    "web",
+    "mobile"
+  ],
+  "author": "Zero Messenger Team",
+  "license": "MIT",
+  "dependencies": {
+    "firebase": "^10.7.0",
+    "cordova": "^12.0.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "cordova-cli": "^12.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "plugins": {
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-firebase": {},
+      "cordova-plugin-camera": {},
+      "cordova-plugin-file": {},
+      "cordova-plugin-network-information": {}
+    }
+  }
+}
