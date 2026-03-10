@@ -1,7 +1,7 @@
 {
   "appId": "com.zeromessenger.app",
   "appName": "Zero Messenger",
-  "webDir": ".",
+  "webDir": "dist",
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": true
