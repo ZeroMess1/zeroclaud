@@ -1,8 +1,8 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
@@ -10,80 +10,63 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-node@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
-
-    - run: npm install
-
-    - uses: actions/setup-java@v4
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Install Capacitor
+      run: npm install @capacitor/core @capacitor/cli @capacitor/android
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-
-    - name: Install Tools
+        
+    - name: Install Android SDK
+      uses: android-actions/setup-android@v2
+      
+    - name: Initialize Capacitor
+      run: npx cap add android || true
+      
+    - name: Sync Capacitor
+      run: npx cap sync android
+      
+    - name: Update app name in Capacitor
       run: |
-        sudo apt-get update
-        sudo apt-get install -y aapt
-
-    - name: Prepare Files
-      run: |
-        mkdir -p build/assets/www
-        mkdir -p build/res/values
-        cp index.html build/assets/www/
-        cp styles.css build/assets/www/
-        cp config.js build/assets/www/
-        cp utils.js build/assets/www/
-        cp auth.js build/assets/www/
-        cp firestore.js build/assets/www/
-        cp chat.js build/assets/www/
-        cp ui.js build/assets/www/
-        cp app.js build/assets/www/
-
-    - name: Create Manifest
-      run: |
-        cat > build/AndroidManifest.xml << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.zeromessenger.app">
-            <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
-            <uses-permission android:name="android.permission.INTERNET" />
-            <application android:label="Zero Messenger" android:debuggable="true">
-                <activity android:name="android.app.Activity"
-                    android:label="Zero Messenger" android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
+        cat > capacitor.config.json << 'EOF'
+        {
+          "appId": "com.zeromessenger.app",
+          "appName": "Zero Messenger",
+          "webDir": ".",
+          "plugins": {
+            "SplashScreen": {
+              "launchAutoHide": true
+            }
+          }
+        }
         EOF
-
-    - name: Create Strings
+      
+    - name: Build Android APK
       run: |
-        mkdir -p build/res/values
-        cat > build/res/values/strings.xml << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <string name="app_name">Zero Messenger</string>
-        </resources>
-        EOF
-
-    - name: Package APK
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug --stacktrace
+        
+    - name: Find APK
       run: |
-        cd build
-        aapt package -f -M AndroidManifest.xml -S res -A assets \
-          -I /usr/lib/android-sdk/platforms/android-33/android.jar \
-          -F app.apk
-        cd ..
-        cp build/app.apk ZeroMessenger.apk
-        ls -lh ZeroMessenger.apk
-
-    - uses: actions/upload-artifact@v4
+        find android -name "*.apk" -type f
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
       with:
-        name: ZeroMessenger-APK
-        path: ZeroMessenger.apk
+        name: ZeroMessenger-debug.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
