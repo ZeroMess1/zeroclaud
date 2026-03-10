@@ -40,6 +40,20 @@ jobs:
         echo "$ANDROID_HOME/build-tools/33.0.0" >> $GITHUB_PATH
         echo "Android SDK ready"
       
+    - name: Prepare dist folder
+      run: |
+        mkdir -p dist
+        cp index.html dist/
+        cp styles.css dist/
+        cp config.js dist/
+        cp utils.js dist/
+        cp auth.js dist/
+        cp firestore.js dist/
+        cp chat.js dist/
+        cp ui.js dist/
+        cp app.js dist/
+        ls -la dist/
+        
     - name: Initialize Capacitor
       run: |
         npx cap add android
