@@ -97,10 +97,17 @@ jobs:
 
     - name: Build APK (Release)
       run: |
-        cd ZeroMessenger/platforms/android
+        cd ZeroMessenger
+        echo "Current directory: $(pwd)"
+        echo "Checking Android structure:"
+        ls -la platforms/android/
+        cd platforms/android
+        echo "Generating Gradle wrapper..."
+        gradle wrapper --gradle-version 8.7
         chmod +x gradlew
+        echo "Building APK..."
         ./gradlew assembleRelease -Dorg.gradle.jvmargs="-Xmx2048m" --stacktrace
-        echo "=== Поиск APK файлов ==="
+        echo "=== APK Files ==="
         find . -name "*.apk" -type f
       env:
         GRADLE_OPTS: -Xmx2048m
