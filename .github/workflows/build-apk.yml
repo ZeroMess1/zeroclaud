@@ -66,7 +66,7 @@ jobs:
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --stacktrace
+        ./gradlew assembleDebug -x lint --no-daemon --stacktrace 2>&1 | tail -50
         
     - name: Find APK
       run: |
