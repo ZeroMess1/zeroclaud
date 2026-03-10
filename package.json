@@ -28,8 +28,7 @@
     "cordova": "^12.0.0"
   },
   "devDependencies": {
-    "http-server": "^14.1.1",
-    "cordova-cli": "^12.0.0"
+    "http-server": "^14.1.1"
   },
   "cordova": {
     "platforms": [
