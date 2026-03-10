@@ -42,27 +42,11 @@ jobs:
       
     - name: Initialize Capacitor
       run: |
-        npx cap add android || true
-        sleep 2
+        npx cap add android
       
     - name: Sync Capacitor
       run: |
-        npx cap sync android || npx cap add android && npx cap sync android
-      
-    - name: Update app name in Capacitor
-      run: |
-        cat > capacitor.config.json << 'EOF'
-        {
-          "appId": "com.zeromessenger.app",
-          "appName": "Zero Messenger",
-          "webDir": ".",
-          "plugins": {
-            "SplashScreen": {
-              "launchAutoHide": true
-            }
-          }
-        }
-        EOF
+        npx cap sync android
       
     - name: Build Android APK
       run: |
