@@ -212,7 +212,7 @@ jobs:
         ls -lh zero-app/app-unsigned.apk || ls -lh app-unsigned.apk || echo "APK not found"
         file zero-app/app-unsigned.apk || file app-unsigned.apk || true
 
-    - name: Align and Sign APK
+    - name: Align APK
       run: |
         APK_UNSIGNED=$(find . -name "app-unsigned.apk" | head -1)
         if [ -z "$APK_UNSIGNED" ]; then
