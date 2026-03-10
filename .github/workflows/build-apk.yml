@@ -23,51 +23,36 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install Build Tools
+    - name: Install Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y aapt apktool android-sdk-build-tools
+        sudo apt-get install -y aapt
 
-    - name: Create APK Content
+    - name: Prepare Files
       run: |
-        mkdir -p apk_content/assets/www
-        mkdir -p apk_content/res/values
-        mkdir -p apk_content/res/drawable
-        mkdir -p apk_content/META-INF
-
-    - name: Copy Web Files
-      run: |
-        cp index.html apk_content/assets/www/
-        cp styles.css apk_content/assets/www/
-        cp config.js apk_content/assets/www/
-        cp utils.js apk_content/assets/www/
-        cp auth.js apk_content/assets/www/
-        cp firestore.js apk_content/assets/www/
-        cp chat.js apk_content/assets/www/
-        cp ui.js apk_content/assets/www/
-        cp app.js apk_content/assets/www/
+        mkdir -p build/assets/www
+        mkdir -p build/res/values
+        cp index.html build/assets/www/
+        cp styles.css build/assets/www/
+        cp config.js build/assets/www/
+        cp utils.js build/assets/www/
+        cp auth.js build/assets/www/
+        cp firestore.js build/assets/www/
+        cp chat.js build/assets/www/
+        cp ui.js build/assets/www/
+        cp app.js build/assets/www/
 
     - name: Create Manifest
       run: |
-        cat > apk_content/AndroidManifest.xml << 'EOF'
+        cat > build/AndroidManifest.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.zeromessenger.app"
-            android:versionCode="1"
-            android:versionName="1.0.0">
-
+            package="com.zeromessenger.app">
             <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
             <uses-permission android:name="android.permission.INTERNET" />
-            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-            <application
-                android:label="Zero Messenger"
-                android:debuggable="true"
-                android:usesCleartextTraffic="true">
-
-                <activity android:name=".MainActivity"
-                    android:label="Zero Messenger"
-                    android:exported="true">
+            <application android:label="Zero Messenger" android:debuggable="true">
+                <activity android:name="android.app.Activity"
+                    android:label="Zero Messenger" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
                         <category android:name="android.intent.category.LAUNCHER" />
@@ -77,106 +62,28 @@ jobs:
         </manifest>
         EOF
 
-    - name: Create Resources
+    - name: Create Strings
       run: |
-        cat > apk_content/res/values/strings.xml << 'EOF'
+        mkdir -p build/res/values
+        cat > build/res/values/strings.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
             <string name="app_name">Zero Messenger</string>
         </resources>
         EOF
 
-    - name: Create Simple DEX
+    - name: Package APK
       run: |
-        mkdir -p dex_src
-        cat > dex_src/MainActivity.java << 'EOF'
-        import android.app.Activity;
-        import android.os.Bundle;
-        import android.webkit.WebView;
-
-        public class MainActivity extends Activity {
-            public void onCreate(Bundle b) {
-                super.onCreate(b);
-                WebView w = new WebView(this);
-                w.getSettings().setJavaScriptEnabled(true);
-                w.loadUrl("file:///android_asset/www/index.html");
-                setContentView(w);
-            }
-        }
-        EOF
-
-        mkdir -p dex_classes
-        javac -d dex_classes dex_src/MainActivity.java 2>/dev/null || echo "Compile skipped"
-        
-        mkdir -p dex_output
-        d8 dex_classes/MainActivity.class \
-          --output dex_output 2>/dev/null || \
-        dx --dex --output=dex_output/classes.dex dex_classes 2>/dev/null || \
-        echo "DEX created or skipped"
-        
-        # Copy DEX if exists
-        if [ -f dex_output/classes.dex ]; then
-          cp dex_output/classes.dex apk_content/
-        fi
-
-    - name: Build APK Package
-      run: |
-        cd apk_content
-        
-        # Create APK using aapt
-        aapt package -f \
-          -M AndroidManifest.xml \
-          -S res \
-          -A assets \
+        cd build
+        aapt package -f -M AndroidManifest.xml -S res -A assets \
           -I /usr/lib/android-sdk/platforms/android-33/android.jar \
-          -F unsigned.apk 2>&1 || true
-        
-        # Check if aapt created APK
-        if [ ! -f unsigned.apk ]; then
-          echo "Creating APK with zip..."
-          zip -r unsigned.apk \
-            AndroidManifest.xml \
-            assets/ \
-            res/ \
-            -x "*.git*" 2>/dev/null || true
-        fi
-        
-        ls -lh unsigned.apk
-        file unsigned.apk
-
-    - name: Verify APK Structure
-      run: |
-        cd apk_content
-        echo "APK Contents:"
-        unzip -l unsigned.apk | head -20 || true
-        
-        echo "Looking for assets..."
-        unzip -l unsigned.apk | grep assets || echo "Assets not found in APK"
-
-    - name: Align APK
-      run: |
-        export PATH=$PATH:/usr/lib/android-sdk/build-tools/*/
-        
-        if [ ! -f apk_content/unsigned.apk ]; then
-          echo "ERROR: unsigned.apk not found!"
-          exit 1
-        fi
-        
-        zipalign -v 4 apk_content/unsigned.apk ZeroMessenger.apk
-        
-        echo "Final APK:"
+          -F app.apk
+        cd ..
+        cp build/app.apk ZeroMessenger.apk
         ls -lh ZeroMessenger.apk
-        file ZeroMessenger.apk
 
     - uses: actions/upload-artifact@v4
       with:
         name: ZeroMessenger-APK
         path: ZeroMessenger.apk
         retention-days: 30
-
-    - name: Show Build Summary
-      run: |
-        echo "=== Build Complete ==="
-        echo "APK File: ZeroMessenger.apk"
-        ls -lh ZeroMessenger.apk
-        echo "Ready to install on Android device"
