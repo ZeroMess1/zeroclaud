@@ -41,10 +41,13 @@ jobs:
         echo "Android SDK ready"
       
     - name: Initialize Capacitor
-      run: npx cap add android || true
+      run: |
+        npx cap add android || true
+        sleep 2
       
     - name: Sync Capacitor
-      run: npx cap sync android
+      run: |
+        npx cap sync android || npx cap add android && npx cap sync android
       
     - name: Update app name in Capacitor
       run: |
