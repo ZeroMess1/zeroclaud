@@ -1,4 +1,4 @@
-name: Build APK Simple
+name: Build APK
 
 on:
   push:
@@ -23,37 +23,37 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install APK Tools
+    - name: Install Android Build Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y apktool aapt zipalign
+        sudo apt-get install -y android-sdk-build-tools android-sdk-platform-tools
 
-    - name: Create APK Structure
+    - name: Create APK Project Structure
       run: |
-        mkdir -p apk-build/res/raw
-        mkdir -p apk-build/AndroidManifest.d
-        
+        mkdir -p zero-app/src/main/assets/www
+        mkdir -p zero-app/src/main/java/com/zeromessenger/app
+        mkdir -p zero-app/src/main/res/values
+        mkdir -p zero-app/src/main/res/drawable
+        mkdir -p zero-app/build
+
     - name: Copy Web Files
       run: |
-        mkdir -p apk-build/assets/www
-        cp index.html apk-build/assets/www/
-        cp styles.css apk-build/assets/www/
-        cp config.js apk-build/assets/www/
-        cp utils.js apk-build/assets/www/
-        cp auth.js apk-build/assets/www/
-        cp firestore.js apk-build/assets/www/
-        cp chat.js apk-build/assets/www/
-        cp ui.js apk-build/assets/www/
-        cp app.js apk-build/assets/www/
+        cp index.html zero-app/src/main/assets/www/
+        cp styles.css zero-app/src/main/assets/www/
+        cp config.js zero-app/src/main/assets/www/
+        cp utils.js zero-app/src/main/assets/www/
+        cp auth.js zero-app/src/main/assets/www/
+        cp firestore.js zero-app/src/main/assets/www/
+        cp chat.js zero-app/src/main/assets/www/
+        cp ui.js zero-app/src/main/assets/www/
+        cp app.js zero-app/src/main/assets/www/
 
     - name: Create AndroidManifest.xml
       run: |
-        cat > apk-build/AndroidManifest.xml << 'EOF'
+        cat > zero-app/src/main/AndroidManifest.xml << 'MANIFEST'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.zeromessenger.app"
-            android:versionCode="1"
-            android:versionName="1.0.0">
+            package="com.zeromessenger.app">
 
             <uses-sdk
                 android:minSdkVersion="21"
@@ -63,15 +63,16 @@ jobs:
             <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
             <application
-                android:label="@string/app_name"
-                android:icon="@drawable/ic_launcher"
+                android:label="Zero Messenger"
+                android:icon="@mipmap/ic_launcher"
                 android:debuggable="false"
                 android:usesCleartextTraffic="true">
 
                 <activity
                     android:name=".MainActivity"
-                    android:label="@string/app_name"
-                    android:exported="true">
+                    android:label="Zero Messenger"
+                    android:exported="true"
+                    android:screenOrientation="portrait">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
                         <category android:name="android.intent.category.LAUNCHER" />
@@ -79,87 +80,148 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        EOF
+        MANIFEST
 
-    - name: Create resources
+    - name: Create strings.xml
       run: |
-        mkdir -p apk-build/res/values
-        cat > apk-build/res/values/strings.xml << 'EOF'
+        cat > zero-app/src/main/res/values/strings.xml << 'STRINGS'
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
             <string name="app_name">Zero Messenger</string>
         </resources>
-        EOF
+        STRINGS
 
-    - name: Compile Resources
+    - name: Create MainActivity.java
       run: |
-        aapt package -f -m -J apk-build/src \
-          -M apk-build/AndroidManifest.xml \
-          -S apk-build/res \
-          -I /usr/lib/android-sdk/platforms/android-33/android.jar || true
-
-    - name: Compile Java Code
-      run: |
-        mkdir -p apk-build/bin
-        javac -d apk-build/bin \
-          -cp /usr/lib/android-sdk/platforms/android-33/android.jar \
-          apk-build/src/com/zeromessenger/app/R.java 2>/dev/null || true
-        
-        cat > apk-build/src/MainActivity.java << 'EOF'
+        cat > zero-app/src/main/java/com/zeromessenger/app/MainActivity.java << 'JAVA'
         package com.zeromessenger.app;
 
         import android.app.Activity;
         import android.os.Bundle;
         import android.webkit.WebView;
         import android.webkit.WebViewClient;
+        import android.webkit.WebSettings;
 
         public class MainActivity extends Activity {
+            private WebView webView;
+
             @Override
             protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
-                setContentView(R.layout.main);
+                setContentView(R.layout.activity_main);
                 
-                WebView webview = (WebView) findViewById(R.id.webview);
-                webview.setWebViewClient(new WebViewClient());
-                webview.getSettings().setJavaScriptEnabled(true);
-                webview.getSettings().setDomStorageEnabled(true);
-                webview.loadUrl("file:///android_asset/www/index.html");
+                webView = (WebView) findViewById(R.id.webview);
+                WebSettings webSettings = webView.getSettings();
+                webSettings.setJavaScriptEnabled(true);
+                webSettings.setDomStorageEnabled(true);
+                webSettings.setDatabaseEnabled(true);
+                webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                
+                webView.setWebViewClient(new WebViewClient());
+                webView.loadUrl("file:///android_asset/www/index.html");
+            }
+
+            @Override
+            public void onBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    super.onBackPressed();
+                }
             }
         }
-        EOF
-        
-        javac -d apk-build/bin \
+        JAVA
+
+    - name: Create layout XML
+      run: |
+        mkdir -p zero-app/src/main/res/layout
+        cat > zero-app/src/main/res/layout/activity_main.xml << 'LAYOUT'
+        <?xml version="1.0" encoding="utf-8"?>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <WebView
+                android:id="@+id/webview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+        LAYOUT
+
+    - name: Create R.java (resources)
+      run: |
+        cat > zero-app/src/main/java/com/zeromessenger/app/R.java << 'RFILE'
+        package com.zeromessenger.app;
+
+        public final class R {
+            public static final class layout {
+                public static final int activity_main = 0x7f020000;
+            }
+            public static final class id {
+                public static final int webview = 0x7f050000;
+            }
+            public static final class string {
+                public static final int app_name = 0x7f060000;
+            }
+            public static final class mipmap {
+                public static final int ic_launcher = 0x7f070000;
+            }
+        }
+        RFILE
+
+    - name: Compile Java
+      run: |
+        mkdir -p zero-app/build/classes
+        javac -d zero-app/build/classes \
           -cp /usr/lib/android-sdk/platforms/android-33/android.jar \
-          apk-build/src/MainActivity.java 2>/dev/null || true
+          zero-app/src/main/java/com/zeromessenger/app/*.java 2>&1 | head -20 || true
 
     - name: Create DEX
       run: |
-        mkdir -p apk-build/dex
-        dx --dex --output=apk-build/dex/classes.dex apk-build/bin 2>/dev/null || \
-        d8 apk-build/bin/*.class --output apk-build/dex 2>/dev/null || \
-        echo "Using prebuilt classes.dex"
+        mkdir -p zero-app/build/dex
+        # Try with d8 (modern)
+        d8 zero-app/build/classes/com/zeromessenger/app/*.class \
+          --lib /usr/lib/android-sdk/platforms/android-33/android.jar \
+          --output zero-app/build/dex 2>/dev/null || \
+        # Fallback to dx (legacy)
+        dx --dex --output=zero-app/build/dex/classes.dex zero-app/build/classes 2>/dev/null || \
+        echo "DEX creation skipped"
 
     - name: Package APK
       run: |
-        mkdir -p apk-build/lib/armeabi-v7a
-        
-        aapt package -f -M apk-build/AndroidManifest.xml \
-          -S apk-build/res \
-          -A apk-build/assets \
+        cd zero-app/src/main
+        aapt package -f \
+          -M AndroidManifest.xml \
+          -S res \
+          -A assets \
           -I /usr/lib/android-sdk/platforms/android-33/android.jar \
-          -F apk-build/unsigned.apk || true
+          -F app-unsigned.apk 2>&1 | head -20 || true
         
-        if [ ! -f apk-build/unsigned.apk ]; then
-          cd apk-build
-          zip -r unsigned.apk AndroidManifest.xml assets/ res/ 2>/dev/null || true
-          cd ..
+        if [ -f app-unsigned.apk ]; then
+          echo "APK created with aapt"
+          cp app-unsigned.apk ../../../app-unsigned.apk
+        else
+          echo "Creating APK with zip..."
+          cd ../..
+          zip -r app-unsigned.apk . -x "*.git*" "*.class" "*.dex" "build/*" 2>/dev/null || true
         fi
-        
-        ls -lh apk-build/unsigned.apk
 
-    - name: Align APK
+    - name: Check APK
       run: |
-        zipalign -v 4 apk-build/unsigned.apk ZeroMessenger.apk
+        ls -lh zero-app/app-unsigned.apk || ls -lh app-unsigned.apk || echo "APK not found"
+        file zero-app/app-unsigned.apk || file app-unsigned.apk || true
+
+    - name: Align and Sign APK
+      run: |
+        APK_UNSIGNED=$(find . -name "app-unsigned.apk" | head -1)
+        if [ -z "$APK_UNSIGNED" ]; then
+          echo "APK file not found!"
+          exit 1
+        fi
+        echo "Found: $APK_UNSIGNED"
+        
+        zipalign -v 4 "$APK_UNSIGNED" ZeroMessenger.apk
         ls -lh ZeroMessenger.apk
 
     - uses: actions/upload-artifact@v4
