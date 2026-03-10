@@ -92,24 +92,35 @@ jobs:
     - name: Build APK (Release)
       run: |
         cd ZeroMessenger
-        cordova build android --release
+        cordova build android --release 2>&1 | tee build.log
+        echo "=== Поиск APK файлов ==="
+        find . -name "*.apk" -type f
+        echo "=== Структура папок ==="
+        ls -la platforms/android/app/build/outputs/ || echo "Папка не существует"
       env:
         GRADLE_OPTS: -Xmx2048m
 
     - name: Decode Keystore
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > my-release-key.keystore
-        ls -lh my-release-key.keystore
+        pwd
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+        ls -lh release.keystore
+        echo "Keystore path: $(pwd)/release.keystore"
 
-    - name: Find APK and Sign
+    - name: Find and Sign APK
       run: |
-        find ZeroMessenger -name "*release*apk" -type f
-        APK_FILE=$(find ZeroMessenger/platforms/android -name "app-release*apk" | head -1)
+        cd ZeroMessenger
+        APK_FILE=$(find . -name "app-release-unsigned.apk" -o -name "app-release.apk" | head -1)
+        if [ -z "$APK_FILE" ]; then
+          echo "APK не найден!"
+          find . -name "*.apk" -type f
+          exit 1
+        fi
         echo "Found APK: $APK_FILE"
         APK_DIR=$(dirname "$APK_FILE")
         cd "$APK_DIR"
         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore ../../../../../../../my-release-key.keystore \
+          -keystore ../../../../../../release.keystore \
           -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
           -keypass "${{ secrets.KEY_PASSWORD }}" \
           "$(basename $APK_FILE)" \
@@ -117,24 +128,30 @@ jobs:
 
     - name: Align APK
       run: |
-        APK_FILE=$(find ZeroMessenger/platforms/android -name "app-release*apk" | head -1)
+        cd ZeroMessenger
+        APK_FILE=$(find . -name "app-release*.apk" | head -1)
+        if [ -z "$APK_FILE" ]; then
+          echo "APK не найден для выравнивания!"
+          exit 1
+        fi
+        echo "Aligning: $APK_FILE"
         APK_DIR=$(dirname "$APK_FILE")
         cd "$APK_DIR"
-        zipalign -v 4 "$(basename $APK_FILE)" ZeroMessenger-v1.0.0.apk
-        ls -lh ZeroMessenger-v1.0.0.apk
-        cp ZeroMessenger-v1.0.0.apk ../../../../../ZeroMessenger-v1.0.0.apk
+        zipalign -v 4 "$(basename $APK_FILE)" ZeroMessenger-final.apk
+        ls -lh ZeroMessenger-final.apk
+        cp ZeroMessenger-final.apk ../../../../../ZeroMessenger-final.apk
 
     - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ZeroMessenger-APK
-        path: ZeroMessenger-v1.0.0.apk
+        path: ZeroMessenger-final.apk
         retention-days: 30
 
     - name: Create Release (on Tag)
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: ZeroMessenger-v1.0.0.apk
+        files: ZeroMessenger-final.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
