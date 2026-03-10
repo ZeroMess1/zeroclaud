@@ -26,7 +26,7 @@ jobs:
     - name: Install Build Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y aapt apktool
+        sudo apt-get install -y aapt apktool android-sdk-build-tools
 
     - name: Create APK Content
       run: |
@@ -155,6 +155,8 @@ jobs:
 
     - name: Align APK
       run: |
+        export PATH=$PATH:/usr/lib/android-sdk/build-tools/*/
+        
         if [ ! -f apk_content/unsigned.apk ]; then
           echo "ERROR: unsigned.apk not found!"
           exit 1
