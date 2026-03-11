@@ -20,6 +20,10 @@ auth.onAuthStateChanged(async (user) => {
                 
                 // Загружаем чаты
                 loadChats();
+            } else {
+                // Документ не найден — выходим
+                console.warn('Профиль не найден в Firestore');
+                await auth.signOut();
             }
         } catch (error) {
             console.error('Ошибка загрузки данных пользователя:', error);
@@ -120,15 +124,13 @@ async function login(email, password) {
         }
 
         // Вход в аккаунт
-        await auth.signInWithEmailAndPassword(email, password);
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
         
         // Обновляем lastSeen и online статус
-        if (currentUser) {
-            await db.collection('users').doc(currentUser.uid).update({
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                online: true
-            });
-        }
+        await db.collection('users').doc(userCredential.user.uid).update({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            online: true
+        });
 
         console.log('Пользователь вошел');
         showToast('Вы вошли в аккаунт!', 'success');
@@ -143,6 +145,8 @@ async function login(email, password) {
             showToast('Неверный пароль', 'error');
         } else if (error.code === 'auth/invalid-email') {
             showToast('Некорректный email', 'error');
+        } else if (error.code === 'auth/invalid-credential') {
+            showToast('Неверный email или пароль', 'error');
         } else {
             showToast('Ошибка входа: ' + error.message, 'error');
         }
@@ -275,7 +279,7 @@ async function resetPassword(email) {
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail').value;
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     
     const success = await login(email, password);
@@ -289,8 +293,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     
     const success = await register(name, email, password);
