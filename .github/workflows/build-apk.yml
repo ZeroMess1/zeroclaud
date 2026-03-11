@@ -63,6 +63,23 @@ jobs:
     - name: Sync Capacitor
       run: npx cap sync android
 
+    - name: Fix Kotlin duplicate classes
+      run: |
+        BUILD_GRADLE="android/app/build.gradle"
+        echo "" >> "$BUILD_GRADLE"
+        cat >> "$BUILD_GRADLE" << 'EOF'
+
+        configurations.all {
+            resolutionStrategy {
+                force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+                force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+            }
+        }
+        EOF
+        echo "=== app/build.gradle tail ==="
+        tail -20 "$BUILD_GRADLE"
+
     - name: Make gradlew executable
       run: chmod +x android/gradlew
 
@@ -75,7 +92,7 @@ jobs:
       if: always()
       run: |
         echo "=== ERRORS ==="
-        grep -E "FAILED|Exception|error:|Error:|Caused by" android/build.log | head -80 || true
+        grep -E "FAILED|Duplicate|Exception|error:|Caused by" android/build.log | head -80 || true
         echo "=== LAST 100 LINES ==="
         tail -100 android/build.log
 
