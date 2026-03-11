@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -69,15 +69,15 @@ jobs:
     - name: Build Android APK
       run: |
         cd android
-        ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || true
+        ./gradlew assembleDebug --no-daemon 2>&1 | tee build.log || true
 
     - name: Show build log
       if: always()
       run: |
         echo "=== ERRORS ==="
-        grep -E "FAILED|Exception|error:|Error:" android/build.log | head -80 || true
-        echo "=== LAST 150 LINES ==="
-        tail -150 android/build.log
+        grep -E "FAILED|Exception|error:|Error:|Caused by" android/build.log | head -80 || true
+        echo "=== LAST 100 LINES ==="
+        tail -100 android/build.log
 
     - name: Find and copy APK
       run: |
