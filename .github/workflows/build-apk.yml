@@ -1,12 +1,98 @@
-- name: Build Android APK
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install SDK packages
+      run: sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Capacitor
+      run: npm install @capacitor/core @capacitor/cli @capacitor/android
+
+    - name: Prepare dist folder
+      run: |
+        mkdir -p dist
+        for f in index.html styles.css config.js utils.js auth.js firestore.js chat.js ui.js app.js; do
+          [ -f "$f" ] && cp "$f" dist/ && echo "Copied $f" || echo "WARNING: $f not found"
+        done
+        ls -la dist/
+
+    - name: Create capacitor.config.json
+      run: |
+        cat > capacitor.config.json << 'EOF'
+        {
+          "appId": "com.zeromessenger.app",
+          "appName": "ZeroMessenger",
+          "webDir": "dist",
+          "server": {
+            "androidScheme": "https"
+          }
+        }
+        EOF
+
+    - name: Initialize Capacitor Android
+      run: npx cap add android
+
+    - name: Sync Capacitor
+      run: npx cap sync android
+
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
+
+    - name: Build Android APK
       run: |
         cd android
         ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || true
 
-    - name: SHOW FULL ERROR
+    - name: Show build log
       if: always()
       run: |
-        echo "======= GREP ERRORS ======="
-        grep -E "FAILED|Exception|error:|Error:" android/build.log | head -100 || true
-        echo "======= LAST 150 LINES ======="
+        echo "=== ERRORS ==="
+        grep -E "FAILED|Exception|error:|Error:" android/build.log | head -80 || true
+        echo "=== LAST 150 LINES ==="
         tail -150 android/build.log
+
+    - name: Find and copy APK
+      run: |
+        APK_PATH=$(find android -name "*.apk" -type f | head -1)
+        if [ -z "$APK_PATH" ]; then
+          echo "APK not found!"
+          exit 1
+        fi
+        echo "Found: $APK_PATH"
+        cp "$APK_PATH" ./ZeroMessenger.apk
+        ls -lh ./ZeroMessenger.apk
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ZeroMessenger-APK
+        path: ./ZeroMessenger.apk
+        retention-days: 30
